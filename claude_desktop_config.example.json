@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "python",
+      "args": ["/caminho/absoluto/para/mcp-databricks-server/src/server.py"],
+      "env": {
+        "DATABRICKS_HOST": "https://SEU-WORKSPACE.cloud.databricks.com",
+        "DATABRICKS_TOKEN": "seu-personal-access-token-aqui"
+      }
+    }
+  }
+}
