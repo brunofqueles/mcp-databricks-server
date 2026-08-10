@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "databricks": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "C:\\Users\\Bruno Queles\\OneDrive - brunoqueles\\Documentos\\Documentos Pessoais\\Transição de Carreira\\Recolocação\\Projeto_recolocação_2 semestre\\Projeto_mcp\\mcp-databricks-server\\src\\server.py"
+      ],
+      "env": {}
+    }
+  }
+}
