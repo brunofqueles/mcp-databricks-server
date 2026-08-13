@@ -1,12 +1,8 @@
 """
 MCP Databricks Server — entrypoint.
 
-Esqueleto minimo do servidor MCP, sem tools reais ainda.
-Objetivo: validar que o handshake do protocolo (initialize -> tools/list)
-funciona corretamente com um cliente MCP (Claude Code), antes de
-implementar qualquer logica de negocio.
-
-Proxima etapa: registrar as tools reais importando de src/tools/.
+Servidor MCP que expõe operações sobre o Unity Catalog do Databricks.
+Handshake validado; primeira tool real (list_tables) registrada.
 """
 
 import asyncio
@@ -17,14 +13,14 @@ import mcp.types as types
 from mcp.server.lowlevel import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
+from tools.list_tables import TOOL_DEFINITION as LIST_TABLES_DEFINITION
+from tools.list_tables import handle_list_tables
+
 # Logging vai para stderr (nunca para stdout) — stdout e reservado
 # exclusivamente para as mensagens do protocolo MCP.
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp-databricks-server")
 
-# Cria a instancia do servidor MCP. O nome "databricks-mcp-server"
-# e o identificador que aparece para o cliente (Claude Code) durante
-# o handshake inicial.
 server = Server("databricks-mcp-server")
 
 
@@ -33,12 +29,27 @@ async def handle_list_tools() -> list[types.Tool]:
     """
     Responde a mensagem 'tools/list' do protocolo.
 
-    Retorna uma lista vazia de proposito — ainda nao implementamos
-    nenhuma tool real. O objetivo aqui e confirmar que o servidor
-    responde corretamente a essa etapa do handshake.
+    Retorna a lista de tools disponiveis. Cada tool nova implementada
+    deve ser adicionada aqui.
     """
-    logger.info("Recebida chamada tools/list — retornando lista vazia (esqueleto)")
-    return []
+    logger.info("Recebida chamada tools/list")
+    return [LIST_TABLES_DEFINITION]
+
+
+@server.call_tool()
+async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
+    """
+    Responde a mensagem 'tools/call' do protocolo.
+
+    Roteia a chamada para o handler correto, de acordo com o nome
+    da tool solicitada pelo cliente MCP.
+    """
+    logger.info(f"Recebida chamada tools/call — tool={name}, args={arguments}")
+
+    if name == "list_tables":
+        return await handle_list_tables(arguments)
+
+    raise ValueError(f"Tool desconhecida: {name}")
 
 
 async def main():
@@ -46,7 +57,7 @@ async def main():
     Inicializa o transporte stdio e coloca o servidor para rodar,
     aguardando mensagens do cliente MCP (Claude Code) via stdin/stdout.
     """
-    logger.info("Iniciando MCP Databricks Server (modo esqueleto, sem tools)")
+    logger.info("Iniciando MCP Databricks Server")
 
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
